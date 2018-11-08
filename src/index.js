@@ -50,7 +50,7 @@ export function createStore(helpers) {
   return function store(state, actions) {
     const Context = React.createContext()
 
-    return class Store extends Component {
+    return class Store extends React.Component {
       static Context = Context
 
       helpers = mapValues({ ...defaultHelpers, ...helpers }, helper =>
