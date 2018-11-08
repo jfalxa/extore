@@ -36,6 +36,16 @@ export function combineStores(...stores) {
   }
 }
 
+const defaultHelpers = {
+  getState() {
+    return this.state
+  },
+
+  setState(state) {
+    return this.setState(state)
+  }
+}
+
 export function createStore(helpers) {
   return function store(state, actions) {
     const Context = React.createContext()
@@ -43,7 +53,9 @@ export function createStore(helpers) {
     return class Store extends Component {
       static Context = Context
 
-      helpers = mapValues(helpers, helper => helper.bind(this))
+      helpers = mapValues({ ...defaultHelpers, ...helpers }, helper =>
+        helper.bind(this)
+      )
 
       state = {
         ...state,

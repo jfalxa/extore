@@ -89,13 +89,12 @@ const FileList = ({ auth, files }) => {
 
   return (
     <ul>
-      {files.list.map(
-        file => (
-          <li key={file.id}>
-            <span>{file.name}</span>
-            <button onClick={() => files.delete(file.id)}>x</button>
-          </li>)
-      )}
+      {files.list.map(file => (
+        <li key={file.id}>
+          <span>{file.name}</span>
+          <button onClick={() => files.delete(file.id)}>x</button>
+        </li>
+      ))}
     </ul>
   )
 }
