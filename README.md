@@ -12,16 +12,32 @@ const store = createStore()
 
 In order to avoid repeating features that would be shared between many stores, you can specify a helper object as parameter. The content of this object should only be functions. Once a store based on this factory is rendered, it will bind those tools to its own context (this) and then pass them as parameter to your action creator function.
 
+The store will save them under `this.helpers` so you can access any registered helpers inside any other helper.
+
 ```JS
-// those are the default helpers
-// they will always be available unless you explicitely overwrite them
 const helpers = {
+  // the next 2 functions are the default helpers
+  // they will always be available unless you explicitely overwrite them
+
   getState() {
     return this.state
   },
 
   setState(state) {
     this.setState(state)
+  }
+
+  // example using helpers inside helpers
+  changeCounter(diff) {
+    this.setState({ value: this.state.value + diff })
+  },
+
+  increment() {
+    this.helpers.changeCounter(+1)
+  },
+
+  decrement() {
+    this.helpers.changeCounter(-1)
   }
 }
 
