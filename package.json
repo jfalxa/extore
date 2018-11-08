@@ -3,6 +3,7 @@
   "version": "0.1.4",
   "description": "",
   "main": "lib/index.js",
+  "repo": "github:jfalxa/extore",
   "scripts": {
     "build": "babel src/* -d lib --source-maps --minified",
     "clean": "rimraf lib",
