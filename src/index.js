@@ -45,7 +45,7 @@ export function createStore(state, actions) {
     registerActions(methods) {
       return reduce(methods, (registered, method, name) => ({
         ...registered,
-        [name]: () => method.apply(this.state, arguments)
+        [name]: (...params) => method.apply(this.state, params)
       }))
     }
 

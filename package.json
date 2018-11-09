@@ -5,7 +5,7 @@
   "main": "lib/index.js",
   "repo": "github:jfalxa/extore",
   "scripts": {
-    "build": "babel src/* -d lib --source-maps --minified",
+    "build": "babel src/* -d lib --source-maps",
     "clean": "rimraf lib",
     "prepublish": "npm run clean && npm run build"
   },
