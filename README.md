@@ -1,91 +1,58 @@
 # extore
 
-This lib gives you helpers to manage your application state in a flux way through React's Context API.
+This lib helps you manage your application state in a flux way through React's Context API.
 
-## createStore(helpers: object) => function
+## createStore(state: any, actions: object) => Component
 
-Before actually creating your stores, you will need to build the factory that will produce them.
+By passing a default state object and a list of actions to the `createStore()` function, you will create a new component with its own context. It will expose its state along with the actions you specified so that every consumer of its context may be able to read and update the current state.
 
-```JS
-const store = createStore()
-```
+Once the store is built, it will initialize the state with the value you specified, then will add every actions inside as well. To make writing your actions easier, all of them will be bound to the store's state when they are called. This means you'll have internal access to the state using `this` and that you can access other actions from your actions easily, as they're technically part of the store's state.
 
-In order to avoid repeating features that would be shared between many stores, you can specify a helper object as parameter. The content of this object should only be functions. Once a store based on this factory is rendered, it will bind those tools to its own context (this) and then pass them as parameter to your action creator function.
+In order to still be able to modify the state, a proxy to the `setState` function is also put in the state so that you can call it from your actions using `this.setState` as you would usually do.
 
-The store will save them under `this.helpers` so you can access any registered helpers inside any other helper.
-
-```JS
-const helpers = {
-  // the next 2 functions are the default helpers
-  // they will always be available unless you explicitely overwrite them
-
-  getState() {
-    return this.state
-  },
-
-  setState(state) {
-    this.setState(state)
-  }
-
-  // example using helpers inside helpers
-  changeCounter(diff) {
-    this.setState({ value: this.state.value + diff })
-  },
-
-  increment() {
-    this.helpers.changeCounter(+1)
-  },
-
-  decrement() {
-    this.helpers.changeCounter(-1)
-  }
-}
-
-const store = createStore(helpers)
-```
-
-## store(defaultState: any, actions: function) => Component
-
-By passing a default state object and a list of actions to the `store()` factory, you will create a new component with its own context. It will expose its state along with the actions you specified so that every consumer of its context may be able to read and update the current state.
-
-When the store is ready, use it as any other component in your React tree. Any of its descendant will now have access to its state and actions if they connect to it.
+Beware though not to have any collision between your actual state object keys and the name of your actions. At setup, actions will overwrite any piece of state that have the same name and later, when you use `setState`, you might also replace your actions with simple values.
 
 ```JS
 const state = {
   counter: 0,
-
-  data: {},
-  error: null,
-  loading: false
 }
 
-// the action creator gets the helpers bound to the current store's context (see above)
-const actions = ({ getState, setState }) => ({
+const actions = {
+  changeCounter(change) {
+    // access the store's state content directly through this
+    const counter = this.counter + change
+
+    // modify the state with this.setState
+    this.setState({ counter })
+  }
+
   increment() {
-    setState({ counter: getState().counter + 1})
+    // access the other actions with this
+    this.changeCounter(+1)
   }
 
-  async loadData(path) {
-    setState({ loading: true, error: null })
-    const res = await fetch(path).then(res => res.json())
-    setState({ loading: false, data: res.data, error: res.error })
+  decrement() {
+    this.changeCounter(-1)
   }
-})
+}
 
-const Store = store(state, actions)
+const Store = createStore(state, actions)
 
 // wrap your app with it to make it a global context
 // but remember you can also put it anywhere else in the tree for more detailed scoping
 ReactDOM.render(<Store><App /></Store>, root)
 ```
 
-## connect(stores: object) => (component: Component) => Component
+## connect(stores: object, selector: function) => (component: Component) => Component
 
 Now that your Store is ready, you'll want to connect some components to it in order to consume the context. To do so, pass an object to the connect function listing the stores you'll want to connect to.
 
-The connect function is a helper that will combine different Context Consumers for each store mentionned and pass their content as props.
+The connect function is a helper that will combine different Context Consumers for each store mentionned and pass their state as props.
 
 The connected component will receive props matching the object you gave, meaning for each key you defined in this object, one prop will be created, containing the state and actions of the corresponding store.
+
+You can also pass an optional selector as 2nd parameter, it will read all the props that the component
+receives, including the consumed context. The object it returns will be the only props passed to the connected component.
 
 ```JS
 import AuthStore from '../stores/auth'
@@ -98,8 +65,8 @@ import FilesStore from '../stores/files'
 // - state: { list: [{ id: number, name: string }]}
 // - actions: { delete(id: string) }
 
-const FileList = ({ auth, files }) => {
-  if (!auth.user) {
+const FileList = ({ isAuthenticated, files }) => {
+  if (!isAuthenticated) {
     return null
   }
 
@@ -115,7 +82,11 @@ const FileList = ({ auth, files }) => {
   )
 }
 
-export default connect({ auth: AuthStore, files: FileStore })(FileList)
+function selector({ auth, files }) {
+  return { isAuthenticated: Boolean(auth.user), files }
+}
+
+export default connect({ auth: AuthStore, files: FileStore }, selector)(FileList)
 ```
 
 ## combineStores(...stores: [Component]) => Component

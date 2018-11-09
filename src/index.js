@@ -1,11 +1,5 @@
 import React from 'react'
 
-function mapValues(obj, mapper) {
-  const mapped = {}
-  Object.keys(obj).forEach(key => (mapped[key] = mapper(obj[key])))
-  return mapped
-}
-
 function reduce(obj, reducer, val) {
   return Object.keys(obj).reduce((acc, key) => reducer(acc, obj[key], key), val)
 }
@@ -18,9 +12,9 @@ function addStore(children, store, key) {
   )
 }
 
-export function connect(stores) {
+export function connect(stores, selector = v => v) {
   return Component => {
-    const root = props => <Component {...props} />
+    const root = props => <Component {...selector(props)} />
     const Connector = reduce(stores, addStore, root)
     Connector.displayName = 'Connector'
     return Connector
@@ -28,47 +22,37 @@ export function connect(stores) {
 }
 
 export function combineStores(...stores) {
-  return function CombinedStore(props) {
+  return function CombinedStore({ children }) {
     return stores.reduce(
-      (combined, Store) => <Store>{combined}</Store>,
-      props.children
+      (combined, Store) => <Store children={combined} />,
+      children
     )
   }
 }
 
-const defaultHelpers = {
-  getState() {
-    return this.state
-  },
+export function createStore(state, actions) {
+  const context = React.createContext()
 
-  setState(state) {
-    return this.setState(state)
-  }
-}
+  return class Store extends React.Component {
+    static Context = context
 
-export function createStore(helpers) {
-  return function store(state, actions) {
-    const Context = React.createContext()
+    state = {
+      ...state,
+      ...this.registerActions(actions),
+      setState: update => this.setState(update)
+    }
 
-    return class Store extends React.Component {
-      static Context = Context
+    registerActions(methods) {
+      return reduce(methods, (registered, method, name) => ({
+        ...registered,
+        [name]: (...args) => method.bind(this.state)(...args)
+      }))
+    }
 
-      helpers = mapValues({ ...defaultHelpers, ...helpers }, helper =>
-        helper.bind(this)
+    render() {
+      return (
+        <context.Provider value={this.state} children={this.props.children} />
       )
-
-      state = {
-        ...state,
-        ...actions(this.helpers)
-      }
-
-      render() {
-        return (
-          <Context.Provider value={this.state}>
-            {this.props.children}
-          </Context.Provider>
-        )
-      }
     }
   }
 }
