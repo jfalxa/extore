@@ -2,6 +2,10 @@
 
 This lib helps you manage your application state in a flux way through React's Context API.
 
+## Install
+
+`npm install extore`
+
 ## createStore(state: any, actions: object) => Component
 
 By passing a default state object and a list of actions to the `createStore()` function, you will create a new component with its own context. It will expose its state along with the actions you specified so that every consumer of its context may be able to read and update the current state.
@@ -13,6 +17,8 @@ In order to still be able to modify the state, a proxy to the `setState` functio
 Beware though not to have any collision between your actual state object keys and the name of your actions. At setup, actions will overwrite any piece of state that have the same name and later, when you use `setState`, you might also replace your actions with simple values.
 
 ```JS
+import { createStore } from 'extore'
+
 const state = {
   counter: 0,
 }
@@ -55,6 +61,7 @@ You can also pass an optional selector as 2nd parameter, it will read all the pr
 receives, including the consumed context. The object it returns will be the only props passed to the connected component.
 
 ```JS
+import { connect } from 'extore'
 import AuthStore from '../stores/auth'
 import FilesStore from '../stores/files'
 
@@ -94,6 +101,7 @@ export default connect({ auth: AuthStore, files: FileStore }, selector)(FileList
 If you do not want to manually add all the stores in your app, you can generate a wrapper component that will render them for you in one place. For that you need to pass a series of Stores to the `combineStores` function and it will return you the wrapper component.
 
 ```JS
+import { combineStores } from 'extore'
 import AuthStore from '../stores/auth'
 import FilesStore from '../stores/files'
 
